@@ -42,6 +42,9 @@ class User
     #[ORM\JoinColumn(nullable: false)]
     private ?Role $role = null;
 
+    #[ORM\OneToOne(inversedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?EmailChangeRequest $emailChangeRequest = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -151,6 +154,18 @@ class User
     public function setRole(?Role $role): self
     {
         $this->role = $role;
+
+        return $this;
+    }
+
+    public function getEmailChangeRequest(): ?EmailChangeRequest
+    {
+        return $this->emailChangeRequest;
+    }
+
+    public function setEmailChangeRequest(?EmailChangeRequest $emailChangeRequest): self
+    {
+        $this->emailChangeRequest = $emailChangeRequest;
 
         return $this;
     }
