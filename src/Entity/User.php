@@ -47,9 +47,9 @@ class User
     #[ORM\OneToOne(inversedBy: 'user', cascade: ['persist', 'remove'])]
     private ?EmailChangeRequest $emailChangeRequest = null;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?RefreshToken $refreshToken = null;
+    #[ORM\Column]
+    private ?int $refreshTokenCount = null;
+
 
     public function getId(): ?int
     {
@@ -176,14 +176,14 @@ class User
         return $this;
     }
 
-    public function getRefreshToken(): ?RefreshToken
+    public function getRefreshTokenCount(): ?int
     {
-        return $this->refreshToken;
+        return $this->refreshTokenCount;
     }
 
-    public function setRefreshToken(RefreshToken $refreshToken): self
+    public function setRefreshTokenCount(int $refreshTokenCount): self
     {
-        $this->refreshToken = $refreshToken;
+        $this->refreshTokenCount = $refreshTokenCount;
 
         return $this;
     }
