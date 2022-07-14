@@ -21,6 +21,14 @@ class Role
     #[ORM\Column(length: 255)]
     private ?string $permissions = null;
 
+    public static function create(string $name, string $permissions): self
+    {
+        $user = new self();
+        $user->setName($name);
+        $user->setPermissions($permissions);
+        return $user;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
