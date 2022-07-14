@@ -38,6 +38,10 @@ class User
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $verification_code = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Role $role = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -135,6 +139,18 @@ class User
     public function setVerificationCode(?string $verification_code): self
     {
         $this->verification_code = $verification_code;
+
+        return $this;
+    }
+
+    public function getRole(): ?Role
+    {
+        return $this->role;
+    }
+
+    public function setRole(?Role $role): self
+    {
+        $this->role = $role;
 
         return $this;
     }
