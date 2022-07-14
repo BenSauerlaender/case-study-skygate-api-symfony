@@ -39,18 +39,6 @@ class RoleRepository extends ServiceEntityRepository
         }
     }
 
-    /**
-     * @return Role Returns an Role object
-     */
-    public function getByName(string $name): Role
-    {
-        return $this->createQueryBuilder('r')
-            ->andWhere('r.name = :val')
-            ->setParameter('val', $name)
-            ->getQuery()
-            ->getResult();
-    }
-
     //    public function findOneBySomeField($value): ?Role
     //    {
     //        return $this->createQueryBuilder('r')

@@ -12,6 +12,6 @@ class PasswordHasher
         $factory = new PasswordHasherFactory([
             'auto' => ['algorithm' => 'auto'],
         ]);
-        return $factory->getPasswordHasher('common');
+        return $factory->getPasswordHasher('auto');
     }
 }

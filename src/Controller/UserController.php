@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Role;
 use App\Entity\User;
 use App\Service\CodeGenerator;
 use App\Service\PasswordHasher;
@@ -14,7 +15,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class UserController extends AbstractController
 {
-    #[Route('/register', name: 'user_register', methods: ['GET'])]
+    #[Route('/register', name: 'user_register', methods: ['POST'])]
     public function register(ManagerRegistry $doctrine, Request $request, CodeGenerator $codeGen, PasswordHasher $hasher): JsonResponse
     {
 
@@ -25,7 +26,7 @@ class UserController extends AbstractController
 
         $role = $doctrine
             ->getRepository(Role::class)
-            ->getByName('user');
+            ->findOneBy(['name' => 'user']);
 
         $password = $hasher->getHasher()->hash($request->request->get('password'));
 
