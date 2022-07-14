@@ -4,8 +4,10 @@ namespace App\Entity;
 
 use App\Repository\RoleRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: RoleRepository::class)]
+#[UniqueEntity('name')]
 class Role
 {
     #[ORM\Id]
@@ -13,7 +15,7 @@ class Role
     #[ORM\Column()]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]

@@ -4,8 +4,10 @@ namespace App\Entity;
 
 use App\Repository\EmailChangeRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: EmailChangeRequestRepository::class)]
+#[UniqueEntity('email')]
 class EmailChangeRequest
 {
     #[ORM\Id]
@@ -13,7 +15,7 @@ class EmailChangeRequest
     #[ORM\Column()]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
