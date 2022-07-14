@@ -50,6 +50,21 @@ class User
     #[ORM\Column]
     private ?int $refreshTokenCount = null;
 
+    public static function create(string $email, string $name, string $postcode, string $city, string $phone, string $password, Role $role, string $code): self
+    {
+        $user = new self();
+        $user->setEmail($email);
+        $user->setName($name);
+        $user->setPostcode($postcode);
+        $user->setCity($city);
+        $user->setPhone($phone);
+        $user->setHashedPass($password);
+        $user->setRole($role);
+        $user->isVerified(false);
+        $user->setRefreshTokenCount(0);
+        $user->setVerificationCode($code);
+        return $user;
+    }
 
     public function getId(): ?int
     {
