@@ -2,14 +2,20 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
+use App\Service\CodeGenerator;
+use App\Service\PasswordHasher;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class UserController extends AbstractController
 {
     #[Route('/register', name: 'user_register', methods: ['GET'])]
-    public function register(): JsonResponse
+    public function register(ManagerRegistry $doctrine, Request $request, CodeGenerator $codeGen, PasswordHasher $hasher): JsonResponse
     {
 
         //validate
@@ -17,17 +23,30 @@ class UserController extends AbstractController
         //role
         //email
 
-        //hash password
-        //generate veri-code
-        //insert
+        $role = $doctrine
+            ->getRepository(Role::class)
+            ->getByName('user');
+
+        $password = $hasher->getHasher()->hash($request->request->get('password'));
+
+        $user = User::create(
+            $request->request->get('email'),
+            $request->request->get('name'),
+            $request->request->get('postcode'),
+            $request->request->get('city'),
+            $request->request->get('phone'),
+            $password,
+            $role,
+            $codeGen->getCode(10),
+        );
+
+        $doctrine
+            ->getRepository(User::class)
+            ->add($user, true);
+
 
         //send email
 
-        //return created
-
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/UserController.php',
-        ]);
+        return new JsonResponse(null, Response::HTTP_CREATED);
     }
 }
