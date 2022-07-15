@@ -58,7 +58,7 @@ class User
     #[Assert\Type('string')]
     #[Assert\Length(
         min: 8,
-        max: 5,
+        max: 15,
         normalizer: "App\Entity\User::onlyNumbers",
     )]
     #[Assert\Regex(User::PHONE_NUMBER_REGEX)]
