@@ -18,11 +18,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 
 class UserController extends AbstractController
 {
     #[Route('/register', name: 'user_register', methods: ['POST'])]
-    public function register(ManagerRegistry $doctrine, Request $request, CodeGenerator $codeGen, PasswordHasher $hasher, ValidatorInterface $validator): JsonResponse
+    public function register(ManagerRegistry $doctrine, Request $request, CodeGenerator $codeGen, PasswordHasher $hasher, ValidatorInterface $validator, MailerInterface $mailer): JsonResponse
     {
         $errors = new ConstraintViolationList();
 
@@ -84,8 +86,18 @@ class UserController extends AbstractController
             ->getRepository(User::class)
             ->add($user, true);
 
+        $email = (new Email())
+            ->from('hello@example.com')
+            ->to()
+            //->cc('cc@example.com')
+            //->bcc('bcc@example.com')
+            //->replyTo('fabien@example.com')
+            //->priority(Email::PRIORITY_HIGH)
+            ->subject('Time for Symfony Mailer!')
+            ->text('Sending emails is fun again!')
+            ->html('<p>See Twig integration for better HTML integration!</p>');
 
-
+        $mailer->send($email);
 
         return new JsonResponse(null, Response::HTTP_CREATED);
     }
