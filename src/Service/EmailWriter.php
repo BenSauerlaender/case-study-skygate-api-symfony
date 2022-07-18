@@ -17,6 +17,6 @@ class EmailWriter
             ->to(new Address($email, $name))
             ->subject('Verify your registration!')
             ->text("Please verify your registration by following this link: {$link}")
-            ->html("Please verify your registration by following this link: <a href=\"{$link}\">{$link}</a>a");
+            ->html("Please verify your registration by following this link: <a href=\"{$link}\">{$link}</a>");
     }
 }
