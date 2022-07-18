@@ -201,6 +201,15 @@ class User
         return $this;
     }
 
+    public function verify(string $code): bool
+    {
+        if ($code !== $this->getVerificationCode()) return false;
+
+        $this->setVerified(true);
+        $this->setVerificationCode(null);
+        return true;
+    }
+
     public function getPublicArray(): array
     {
         return [

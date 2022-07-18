@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Requests\RegistrationRequest;
+use App\Requests\VerificationRequest;
 use App\Service\CodeGenerator;
 use App\Service\EmailWriter;
 use App\Service\PasswordHasher;
@@ -29,6 +30,31 @@ class UserController extends AbstractController
         $mailer->send($emailWriter->getVerificationEmail($user->getEmail(), $user->getName(), $user->getId(), $user->getVerificationCode()));
 
         return new JsonResponse(null, Response::HTTP_CREATED);
+    }
+
+    #[Route('/users/{id}/verify', name: 'user_verify', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function verifyUser(int $id, ManagerRegistry $doctrine, VerificationRequest $request): JsonResponse
+    {
+        $request->validate();
+
+        $entityManager = $doctrine->getManager();
+
+        /** @var User */
+        $user = $entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['id' => $id]);
+
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        if ($user->isVerified()) return new JsonResponse(['msg' => 'User is already verified', 'errorCode' => 210], Response::HTTP_BAD_REQUEST);
+
+        $verified = $user->verify($request->code);
+
+        if (!$verified) return new JsonResponse(['msg' => 'The verification code is invalid', 'errorCode' => 211], Response::HTTP_BAD_REQUEST);
+
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_OK);
     }
 
     #[Route('/users/{id}', name: 'user_getOne', methods: ['GET'], requirements: ['id' => '\d+'])]
