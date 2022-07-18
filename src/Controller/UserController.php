@@ -6,8 +6,8 @@ use App\Entity\EmailChangeRequest;
 use App\Entity\Role;
 use App\Entity\User;
 use App\Exceptions\ValidationError;
-use App\Repository\EmailChangeRequestRepository;
 use App\Service\CodeGenerator;
+use App\Service\EmailWriter;
 use App\Service\PasswordHasher;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectRepository;
@@ -21,12 +21,12 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 class UserController extends AbstractController
 {
     #[Route('/register', name: 'user_register', methods: ['POST'])]
-    public function register(ManagerRegistry $doctrine, Request $request, CodeGenerator $codeGen, PasswordHasher $hasher, ValidatorInterface $validator, MailerInterface $mailer): JsonResponse
+    public function register(ManagerRegistry $doctrine, Request $request, CodeGenerator $codeGen, PasswordHasher $hasher, ValidatorInterface $validator, MailerInterface $mailer, EmailWriter $emailWriter): JsonResponse
     {
         $email = $request->request->get('email');
         $name = $request->request->get('name');
@@ -34,6 +34,7 @@ class UserController extends AbstractController
         $city = $request->request->get('city');
         $phone = $request->request->get('phone');
         $password = $request->request->get('password');
+        $code = $codeGen->getCode(10);
 
         $errors = new ConstraintViolationList();
 
@@ -65,7 +66,7 @@ class UserController extends AbstractController
             $phone,
             $password,
             $role,
-            $codeGen->getCode(10),
+            $code,
         );
 
         $errors->addAll($validator->validate($user));
@@ -78,23 +79,13 @@ class UserController extends AbstractController
             ->getRepository(User::class)
             ->add($user, true);
 
-        $email = (new Email())
-            ->from('hello@example.com')
-            ->to()
-            //->cc('cc@example.com')
-            //->bcc('bcc@example.com')
-            //->replyTo('fabien@example.com')
-            //->priority(Email::PRIORITY_HIGH)
-            ->subject('Time for Symfony Mailer!')
-            ->text('Sending emails is fun again!')
-            ->html('<p>See Twig integration for better HTML integration!</p>');
 
-        $mailer->send($email);
+        $mailer->send($emailWriter->getVerificationEmail($email, $name, $user->getId(), $code));
 
         return new JsonResponse(null, Response::HTTP_CREATED);
     }
 
-    private function isEmailFree(string $email, ObjectRepository $UserRep, ObjectRepository $EmailChangeRequestRep): boolean
+    private function isEmailFree(string $email, ObjectRepository $UserRep, ObjectRepository $EmailChangeRequestRep): bool
     {
         return
             is_null(
@@ -105,7 +96,7 @@ class UserController extends AbstractController
             );
     }
 
-    private function validatePassword(string $password, ValidatorInterface $validator)
+    private function validatePassword(string $password, ValidatorInterface $validator): ConstraintViolationListInterface
     {
         $passwordConstraints = new Assert\Collection(['password' => [
             new Assert\NotBlank,
