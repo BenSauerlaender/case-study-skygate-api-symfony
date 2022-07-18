@@ -85,6 +85,17 @@ class UserController extends AbstractController
         return new JsonResponse(null, Response::HTTP_CREATED);
     }
 
+    #[Route('/users/{id}', name: 'user_getOne', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function getOneUser(int $id, ManagerRegistry $doctrine): JsonResponse
+    {
+        $user = $doctrine
+            ->getRepository(User::class)
+            ->findOneBy(['id' => $id]);
+
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+        else return new JsonResponse($user->getPublicArray());
+    }
+
     private function isEmailFree(string $email, ObjectRepository $UserRep, ObjectRepository $EmailChangeRequestRep): bool
     {
         return

@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use PhpParser\Node\Expr\Cast\Array_;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -243,5 +244,19 @@ class User
         $this->refreshTokenCount = $refreshTokenCount;
 
         return $this;
+    }
+
+    public function getPublicArray(): array
+    {
+        return [
+            "id" => $this->getId(),
+            "email" => $this->getEmail(),
+            "name" => $this->getName(),
+            "postcode" => $this->getPostcode(),
+            "city" => $this->getCity(),
+            "phone" => $this->getPhone(),
+            "role" => $this->getRole()->getName(),
+            "verified" => $this->isVerified(),
+        ];
     }
 }
