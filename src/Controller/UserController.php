@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Requests\BaseRequest;
 use App\Requests\RegistrationRequest;
 use App\Requests\VerificationRequest;
 use App\Service\CodeGenerator;
@@ -58,10 +59,16 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}', name: 'user_getOne', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function getOneUser(int $id, ManagerRegistry $doctrine): JsonResponse
+    public function getOneUser(int $id, ManagerRegistry $doctrine, BaseRequest $request): JsonResponse
     {
-        $user = $doctrine
-            ->getRepository(User::class)
+        $userRep = $doctrine->getRepository(User::class);
+
+        $request->requireAuth()
+            ->accept('getAllUsers')
+            ->accept('getSelf', $id)
+            ->check($userRep);
+
+        $user = $userRep
             ->findOneBy(['id' => $id]);
 
         if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);

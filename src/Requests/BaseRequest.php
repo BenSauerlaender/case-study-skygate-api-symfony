@@ -2,6 +2,7 @@
 
 namespace App\Requests;
 
+use App\Requests\Utilities\AuthChecker;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,11 +14,18 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BaseRequest
 {
     protected ConstraintViolationListInterface $errors;
+    protected Request $request;
 
     public function __construct(protected ValidatorInterface $validator)
     {
         $this->errors = new ConstraintViolationList();
         $this->populate();
+        $this->request = Request::createFromGlobals();
+    }
+
+    public function requireAuth(): AuthChecker
+    {
+        return new AuthChecker($this->request->headers->get('Authorization'));
     }
 
     public function validate()
@@ -42,14 +50,9 @@ class BaseRequest
         }
     }
 
-    public function getRequest(): Request
-    {
-        return Request::createFromGlobals();
-    }
-
     protected function populate(): void
     {
-        foreach ($this->getRequest()->request->all() as $property => $value) {
+        foreach ($this->request->request->all() as $property => $value) {
             if (property_exists($this, $property)) {
                 $this->{$property} = $value;
             }

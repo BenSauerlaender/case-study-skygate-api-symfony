@@ -76,7 +76,7 @@ class User
 
     public function setEmail(?string $email): self
     {
-        $this->email = $email;
+        $this->email = strtolower($email);
 
         return $this;
     }
@@ -200,6 +200,13 @@ class User
 
         return $this;
     }
+
+    public function increaseRefreshTokenCount(): self
+    {
+        $this->refreshTokenCount++;
+        return $this;
+    }
+
 
     public function verify(string $code): bool
     {
