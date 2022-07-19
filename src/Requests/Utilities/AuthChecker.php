@@ -20,26 +20,24 @@ class AuthChecker
 
     public function accept(string $permission, ?int $for_user_id = null): Self
     {
-        $acceptingPermissions[] = [$permission, $for_user_id];
+        $this->acceptingPermissions[] = [$permission, $for_user_id];
         return $this;
     }
 
-    public function check(ObjectRepository $userRep)
+    public function check(ObjectRepository $userRep): ?JsonResponse
     {
-        $unauthorized = new JsonResponse('The Request cant be authorized.', Response::HTTP_UNAUTHORIZED);
+        $unauthorized = new JsonResponse(['msg' => 'The Request cant be authorized.'], Response::HTTP_UNAUTHORIZED);
 
         $token = $this->token;
 
         //check if the string is a valid JWT
         if (!Token::validate($token ?? '', $_ENV["ACCESS_TOKEN_SECRET"])) {
-            $unauthorized->send();
-            exit;
+            return $unauthorized;
         }
 
         //check if the JWT is not expired
         if (!Token::validateExpiration($token)) {
-            $unauthorized->send();
-            exit;
+            return $unauthorized;
         }
 
         //get the payload 
@@ -56,12 +54,10 @@ class AuthChecker
                 continue;
             }
             //user has required permission
-            return;
+            return null;
         }
 
         //user has no accepted permission
-        $response = new JsonResponse("The Route requires permissions you don't have.", Response::HTTP_FORBIDDEN);
-        $response->send();
-        exit;
+        return new JsonResponse(['msg' => "The Route requires permissions you dont have."], Response::HTTP_FORBIDDEN);
     }
 }

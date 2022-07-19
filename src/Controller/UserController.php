@@ -66,11 +66,11 @@ class UserController extends AbstractController
     {
         $userRep = $doctrine->getRepository(User::class);
 
-        /*$request->requireAuth()
+        $error = $request->requireAuth()
             ->accept('getAllUsers')
             ->accept('getSelf', $id)
             ->check($userRep);
-            */
+        if ($error) return $error;
 
         $user = $userRep
             ->findOneBy(['id' => $id]);
