@@ -49,7 +49,7 @@ class AuthController extends AbstractController
         $token = Token::customPayload($payload, $_ENV["REFRESH_TOKEN_SECRET"]);
 
         $response = new JsonResponse(null, Response::HTTP_OK);
-        $response->headers->setCookie(new Cookie("skygatecasestudy.refreshtoken", $token, 60 * 60 * 24 * 30, '/', 'localhost', false, true));
+        $response->headers->setCookie(new Cookie("skygatecasestudy.refreshtoken.v2", $token, time() + 60 * 60 * 24 * 30, '/api/v2/', 'localhost', false, true, false, 'None'));
         return $response;
     }
 
@@ -57,7 +57,8 @@ class AuthController extends AbstractController
     public function getAccessToken(ManagerRegistry $doctrine, PasswordHasher $hasher, Request $request): JsonResponse
     {
         $invalidToken = new JsonResponse(['msg' => 'The refreshToken is invalid.', 'code' => 302], Response::HTTP_BAD_REQUEST);
-        $refreshToken = $request->cookies->get("skygatecasestudy.refreshtoken");
+        $refreshToken = $request->cookies->get("skygatecasestudy_refreshtoken_v2");
+
 
         if (!$refreshToken) return $invalidToken;
         if (!Token::validate($refreshToken, $_ENV["REFRESH_TOKEN_SECRET"])) return $invalidToken;
@@ -70,7 +71,7 @@ class AuthController extends AbstractController
         /** @var User */
         $user = $entityManager
             ->getRepository(User::class)
-            ->findOneBy(['email' => $payload['id']]);
+            ->findOneBy(['id' => $payload['id']]);
 
         if (!$user) return new JsonResponse(['msg' => 'User not found', 'code' => 201], Response::HTTP_BAD_REQUEST);
 
