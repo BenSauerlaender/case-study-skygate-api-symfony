@@ -21,7 +21,9 @@ class UserController extends AbstractController
     #[Route('/register', name: 'user_register', methods: ['POST'])]
     public function register(RegistrationRequest $request, ManagerRegistry $doctrine, CodeGenerator $codeGen, PasswordHasher $hasher, MailerInterface $mailer, EmailWriter $emailWriter): JsonResponse
     {
-        $request->validate($doctrine);
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
         $user = $request->toUser($doctrine, $hasher, $codeGen->getCode(10));
 
         $doctrine
@@ -36,7 +38,8 @@ class UserController extends AbstractController
     #[Route('/users/{id}/verify', name: 'user_verify', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function verifyUser(int $id, ManagerRegistry $doctrine, VerificationRequest $request): JsonResponse
     {
-        $request->validate();
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
 
         $entityManager = $doctrine->getManager();
 
@@ -63,10 +66,11 @@ class UserController extends AbstractController
     {
         $userRep = $doctrine->getRepository(User::class);
 
-        $request->requireAuth()
+        /*$request->requireAuth()
             ->accept('getAllUsers')
             ->accept('getSelf', $id)
             ->check($userRep);
+            */
 
         $user = $userRep
             ->findOneBy(['id' => $id]);

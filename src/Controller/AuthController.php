@@ -20,7 +20,8 @@ class AuthController extends AbstractController
     #[Route('/login', name: 'auth_login', methods: ['POST'])]
     public function loginUser(ManagerRegistry $doctrine, LoginRequest $request, PasswordHasher $hasher,): JsonResponse
     {
-        $request->validate();
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
 
         $entityManager = $doctrine->getManager();
 

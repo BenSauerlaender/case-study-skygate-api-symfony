@@ -9,6 +9,7 @@ use App\Helper\ValidationHelper;
 use App\Service\PasswordHasher;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectRepository;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolation;
 
@@ -55,7 +56,7 @@ class RegistrationRequest extends BaseRequest
     protected ?string $password = null;
 
 
-    public function validate(?ManagerRegistry $doctrine = null)
+    public function validate(?ManagerRegistry $doctrine = null): ?JsonResponse
     {
         if (!is_null($this->email)) {
             $isEmailFree = $this->isEmailFree($this->email, $doctrine->getRepository(User::class), $doctrine->getRepository(EmailChangeRequest::class));
@@ -66,7 +67,7 @@ class RegistrationRequest extends BaseRequest
             }
         }
 
-        parent::validate();
+        return parent::validate();
     }
 
     private function isEmailFree(string $email, ObjectRepository $UserRep, ObjectRepository $EmailChangeRequestRep): bool

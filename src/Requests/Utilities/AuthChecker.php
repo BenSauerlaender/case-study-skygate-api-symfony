@@ -31,7 +31,7 @@ class AuthChecker
         $token = $this->token;
 
         //check if the string is a valid JWT
-        if (!Token::validate($token, $_ENV["ACCESS_TOKEN_SECRET"])) {
+        if (!Token::validate($token ?? '', $_ENV["ACCESS_TOKEN_SECRET"])) {
             $unauthorized->send();
             exit;
         }

@@ -19,8 +19,8 @@ class BaseRequest
     public function __construct(protected ValidatorInterface $validator)
     {
         $this->errors = new ConstraintViolationList();
-        $this->populate();
         $this->request = Request::createFromGlobals();
+        $this->populate();
     }
 
     public function requireAuth(): AuthChecker
@@ -28,31 +28,29 @@ class BaseRequest
         return new AuthChecker($this->request->headers->get('Authorization'));
     }
 
-    public function validate()
+    public function validate(): ?JsonResponse
     {
         $this->errors->addAll($this->validator->validate($this));
 
-        $messages = ['errorCode' => 101, 'validationErrors' => []];
+        $messages = ['errorCode' => 102, 'invalidProperties' => []];
 
         /** @var \Symfony\Component\Validator\ConstraintViolation  */
         foreach ($this->errors as $message) {
-            $messages['validationErrors'][$message->getPropertyPath()] = [
+            $messages['invalidProperties'][$message->getPropertyPath()] = [
                 'code' => $message->getCode(),
                 'msg' => $message->getMessageTemplate(),
             ];
         }
 
-        if (count($messages['validationErrors']) > 0) {
-            $response = new JsonResponse($messages, Response::HTTP_BAD_REQUEST);
-            $response->send();
-
-            exit;
+        if (count($messages['invalidProperties']) > 0) {
+            return new JsonResponse($messages, Response::HTTP_BAD_REQUEST);
         }
+        return null;
     }
 
     protected function populate(): void
     {
-        foreach ($this->request->request->all() as $property => $value) {
+        foreach (json_decode($this->request->getContent()) ?? [] as $property => $value) {
             if (property_exists($this, $property)) {
                 $this->{$property} = $value;
             }
