@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Requests\BaseRequest;
 use App\Requests\RegistrationRequest;
+use App\Requests\UserPutRequest;
 use App\Requests\VerificationRequest;
 use App\Service\CodeGenerator;
 use App\Service\EmailWriter;
@@ -77,5 +78,34 @@ class UserController extends AbstractController
 
         if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
         else return new JsonResponse($user->getPublicArray());
+    }
+
+    #[Route('/users/{id}', name: 'user_updateOne', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    public function updateOneUser(int $id, ManagerRegistry $doctrine, UserPutRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+
+            ->accept('changeAllUsersContactData')
+            ->accept('changeOwnContactData', $id)
+            ->check($userRep);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+
+
+        foreach (['name', 'city', 'postcode', 'phone'] as $property) {
+            if (!is_null($request->{$property})) {
+                $user->set($property, $request->{$property});
+            }
+        }
+
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_OK);
     }
 }

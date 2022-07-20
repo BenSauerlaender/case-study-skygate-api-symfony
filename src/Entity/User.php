@@ -217,6 +217,24 @@ class User
         return true;
     }
 
+    public function set(string $property, mixed $value): void
+    {
+        switch ($property) {
+            case "name":
+                $this->setName($value);
+                break;
+            case "postcode":
+                $this->setPostcode($value);
+                break;
+            case "city":
+                $this->setCity($value);
+                break;
+            case "phone":
+                $this->setPhone($value);
+                break;
+        };
+    }
+
     public function getPublicArray(): array
     {
         return [
