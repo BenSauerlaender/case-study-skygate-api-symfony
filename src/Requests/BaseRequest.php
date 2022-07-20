@@ -37,7 +37,7 @@ class BaseRequest
         /** @var \Symfony\Component\Validator\ConstraintViolation  */
         foreach ($this->errors as $message) {
             $messages['invalidProperties'][$message->getPropertyPath()] = [
-                'code' => $message->getCode(),
+                'errorCode' => $message->getCode(),
                 'msg' => $message->getMessageTemplate(),
             ];
         }

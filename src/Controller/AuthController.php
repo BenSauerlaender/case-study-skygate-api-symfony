@@ -30,10 +30,10 @@ class AuthController extends AbstractController
             ->getRepository(User::class)
             ->findOneBy(['email' => strtolower($request->email)]);
 
-        if (!$user) return new JsonResponse(['msg' => 'User not found', 'code' => 201], Response::HTTP_BAD_REQUEST);
+        if (!$user) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
 
         if (!$hasher->getHasher()->verify($user->getHashedPass(), $request->password)) {
-            return new JsonResponse(['msg' => 'Password is incorrect', 'code' => 215], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['msg' => 'Password is incorrect', 'errorCode' => 215], Response::HTTP_BAD_REQUEST);
         }
 
         $user->increaseRefreshTokenCount();
@@ -56,7 +56,7 @@ class AuthController extends AbstractController
     #[Route('/token', name: 'auth_getToken', methods: ['GET'])]
     public function getAccessToken(ManagerRegistry $doctrine, PasswordHasher $hasher, Request $request): JsonResponse
     {
-        $invalidToken = new JsonResponse(['msg' => 'The refreshToken is invalid.', 'code' => 302], Response::HTTP_BAD_REQUEST);
+        $invalidToken = new JsonResponse(['msg' => 'The refreshToken is invalid.', 'errorCode' => 302], Response::HTTP_BAD_REQUEST);
         $refreshToken = $request->cookies->get("skygatecasestudy_refreshtoken_v2");
 
 
@@ -73,7 +73,7 @@ class AuthController extends AbstractController
             ->getRepository(User::class)
             ->findOneBy(['id' => $payload['id']]);
 
-        if (!$user) return new JsonResponse(['msg' => 'User not found', 'code' => 201], Response::HTTP_BAD_REQUEST);
+        if (!$user) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
 
         if ($payload['cnt'] != $user->getRefreshTokenCount()) {
             return $invalidToken;

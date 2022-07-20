@@ -87,7 +87,6 @@ class UserController extends AbstractController
         $userRep = $entityManager->getRepository(User::class);
 
         $error = $request->requireAuth()
-
             ->accept('changeAllUsersContactData')
             ->accept('changeOwnContactData', $id)
             ->check($userRep);
@@ -105,6 +104,27 @@ class UserController extends AbstractController
         }
 
         $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_OK);
+    }
+
+    #[Route('/users/{id}', name: 'user_deleteOne', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function deleteOneUser(int $id, ManagerRegistry $doctrine, UserPutRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('deleteSelf')
+            ->accept('deleteSelf', $id)
+            ->check($userRep);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+
+        $userRep->remove($user, true);
 
         return new JsonResponse(null, Response::HTTP_OK);
     }
