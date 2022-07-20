@@ -21,7 +21,7 @@ class EmailChangeRequest
     #[ORM\Column(length: 255)]
     private ?string $verification_code = null;
 
-    #[ORM\OneToOne(mappedBy: 'emailChangeRequest', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'emailChangeRequest')]
     private ?User $user = null;
 
     public function getId(): ?int

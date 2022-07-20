@@ -194,6 +194,7 @@ class UserController extends AbstractController
         }
 
         $user->setHashedPass($hasher->getHasher()->hash($request->newPassword));
+        $user->increaseRefreshTokenCount();
         $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_OK);
@@ -219,13 +220,14 @@ class UserController extends AbstractController
         if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
 
         $user->setHashedPass($hasher->getHasher()->hash($request->newPassword));
+        $user->increaseRefreshTokenCount();
         $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_OK);
     }
 
     #[Route('/users/{id}/email-change', name: 'user_requestEmailChange', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function changeUsersEmail(int $id, ManagerRegistry $doctrine, CodeGenerator $codeGen, PasswordHasher $hasher, ChangeEmailRequest $request, MailerInterface $mailer, EmailWriter $emailWriter): JsonResponse
+    public function changeUsersEmail(int $id, ManagerRegistry $doctrine, CodeGenerator $codeGen, ChangeEmailRequest $request, MailerInterface $mailer, EmailWriter $emailWriter): JsonResponse
     {
         $entityManager = $doctrine->getManager();
         $userRep = $entityManager->getRepository(User::class);
@@ -251,6 +253,62 @@ class UserController extends AbstractController
         $entityManager->flush();
 
         $mailer->send($emailWriter->getEmailChangeEmail($ecr->getEmail(), $user->getName(), $user->getId(), $ecr->getVerificationCode()));
+
+        return new JsonResponse(null, Response::HTTP_CREATED);
+    }
+
+    #[Route('/users/{id}/email-change-privileged', name: 'user_requestEmailChangePrivileged', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function changeUsersEmailPrivileged(int $id, ManagerRegistry $doctrine, ChangeEmailRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('changeAllUsersEmailPrivileged')
+            ->check($userRep);
+        if ($error) return $error;
+
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        $user->setEmail($request->email);
+        $user->increaseRefreshTokenCount();
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_CREATED);
+    }
+
+    #[Route('/users/{id}/email-change-verify', name: 'user_verifyEmailChange', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function verifyUsersEmail(int $id, ManagerRegistry $doctrine,  VerificationRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        $ecr = $user->getEmailChangeRequest();
+        if (is_null($ecr)) return new JsonResponse(['msg' => 'The user has no open email change request.', 'errorCode' => 212], Response::HTTP_BAD_REQUEST);
+
+        if ($ecr->getVerificationCode() != $request->code) return new JsonResponse(['msg' => 'The verification code is invalid.', 'errorCode' => 211], Response::HTTP_BAD_REQUEST);
+
+        $user->setEmail($ecr->getEmail());
+        $user->setEmailChangeRequest(null);
+        $user->increaseRefreshTokenCount();
+
+        $entityManager->getRepository(EmailChangeRequest::class)->remove($ecr);
+
+        $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_CREATED);
     }
