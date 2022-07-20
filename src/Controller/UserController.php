@@ -125,7 +125,7 @@ class UserController extends AbstractController
         $userRep = $entityManager->getRepository(User::class);
 
         $error = $request->requireAuth()
-            ->accept('deleteSelf')
+            ->accept('deleteAllUsers')
             ->accept('deleteSelf', $id)
             ->check($userRep);
         if ($error) return $error;

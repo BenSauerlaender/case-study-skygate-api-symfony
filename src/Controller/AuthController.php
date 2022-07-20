@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Requests\BaseRequest;
 use App\Requests\LoginRequest;
 use App\Service\PasswordHasher;
 use Doctrine\Persistence\ManagerRegistry;
@@ -89,5 +90,27 @@ class AuthController extends AbstractController
         $token = Token::customPayload($payload, $_ENV["ACCESS_TOKEN_SECRET"]);
 
         return new JsonResponse(['accessToken' => $token], Response::HTTP_OK);
+    }
+
+    #[Route('/users/{id}/logout', name: 'auth_logout', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function logOutUser(ManagerRegistry $doctrine, int $id, BaseRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('logoutSelf', $id)
+            ->check($userRep);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        $user->increaseRefreshTokenCount();
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_CREATED);
     }
 }
