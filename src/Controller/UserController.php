@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\EmailChangeRequest;
 use App\Entity\Role;
 use App\Entity\User;
 use App\Requests\BaseRequest;
+use App\Requests\ChangeEmailRequest;
 use App\Requests\ChangePasswordPrivilegedRequest;
 use App\Requests\ChangePasswordRequest;
 use App\Requests\ChangeRoleRequest;
@@ -220,5 +222,36 @@ class UserController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_OK);
+    }
+
+    #[Route('/users/{id}/email-change', name: 'user_requestEmailChange', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function changeUsersEmail(int $id, ManagerRegistry $doctrine, CodeGenerator $codeGen, PasswordHasher $hasher, ChangeEmailRequest $request, MailerInterface $mailer, EmailWriter $emailWriter): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('changeOwnEmail', $id)
+            ->check($userRep);
+        if ($error) return $error;
+
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        $ecr = new EmailChangeRequest();
+        $ecr
+            ->setEmail($request->email)
+            ->setVerificationCode($codeGen->getCode(10));
+        $user->setEmailChangeRequest($ecr);
+        $entityManager->flush();
+
+        $mailer->send($emailWriter->getEmailChangeEmail($ecr->getEmail(), $user->getName(), $user->getId(), $ecr->getVerificationCode()));
+
+        return new JsonResponse(null, Response::HTTP_CREATED);
     }
 }

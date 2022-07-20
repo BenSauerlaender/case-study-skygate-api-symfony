@@ -19,4 +19,17 @@ class EmailWriter
             ->text("Please verify your registration by following this link: {$link}")
             ->html("Please verify your registration by following this link: <a href=\"{$link}\">{$link}</a>");
     }
+
+    public function getEmailChangeEmail(string $email, string $name, int $id, string $code): Email
+    {
+        $domain = $_ENV["APP_PROD_DOMAIN"];
+        $link = "{$domain}/change-email?userID={$id}&code={$code}";
+
+        return (new Email())
+            ->from(new Address('no-reply@test.de', "SkyGateCaseStudy"))
+            ->to(new Address($email, $name))
+            ->subject('Verify your new email!')
+            ->text("Please verify your new email by following this link: {$link}")
+            ->html("Please verify your new email by following this link: <a href=\"{$link}\">{$link}</a>");
+    }
 }
