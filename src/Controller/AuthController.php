@@ -54,7 +54,7 @@ class AuthController extends AbstractController
     }
 
     #[Route('/token', name: 'auth_getToken', methods: ['GET'])]
-    public function getAccessToken(ManagerRegistry $doctrine, PasswordHasher $hasher, Request $request): JsonResponse
+    public function getAccessToken(ManagerRegistry $doctrine, Request $request): JsonResponse
     {
         $invalidToken = new JsonResponse(['msg' => 'The refreshToken is invalid.', 'errorCode' => 302], Response::HTTP_BAD_REQUEST);
         $refreshToken = $request->cookies->get("skygatecasestudy_refreshtoken_v2");

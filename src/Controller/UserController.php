@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Role;
 use App\Entity\User;
 use App\Requests\BaseRequest;
+use App\Requests\ChangePasswordPrivilegedRequest;
+use App\Requests\ChangePasswordRequest;
 use App\Requests\ChangeRoleRequest;
 use App\Requests\RegistrationRequest;
 use App\Requests\UserPutRequest;
@@ -161,6 +163,60 @@ class UserController extends AbstractController
         if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
 
         $user->setRole($role);
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_OK);
+    }
+
+    #[Route('/users/{id}/password', name: 'user_changePassword', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    public function changeUsersPassword(int $id, ManagerRegistry $doctrine, PasswordHasher $hasher, ChangePasswordRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('changeOwnPassword', $id)
+            ->check($userRep);
+        if ($error) return $error;
+
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        if (!$hasher->getHasher()->verify($user->getHashedPass(), $request->oldPassword)) {
+            return new JsonResponse(['msg' => 'Password is incorrect', 'errorCode' => 215], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user->setHashedPass($hasher->getHasher()->hash($request->newPassword));
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_OK);
+    }
+
+    #[Route('/users/{id}/password-privileged-change', name: 'user_changePasswordPrivileged', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    public function changeUsersPasswordPrivileged(int $id, ManagerRegistry $doctrine, PasswordHasher $hasher, ChangePasswordPrivilegedRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('changeAllUsersPasswordsPrivileged')
+            ->check($userRep);
+        if ($error) return $error;
+
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        $user->setHashedPass($hasher->getHasher()->hash($request->newPassword));
         $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_OK);
