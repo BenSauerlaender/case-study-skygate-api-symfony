@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Requests\BaseRequest;
+use App\Requests\ChangeRoleRequest;
 use App\Requests\RegistrationRequest;
 use App\Requests\UserPutRequest;
 use App\Requests\VerificationRequest;
@@ -92,9 +93,13 @@ class UserController extends AbstractController
             ->check($userRep);
         if ($error) return $error;
 
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
         /** @var User */
         $user = $userRep
             ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
 
 
         foreach (['name', 'city', 'postcode', 'phone'] as $property) {
@@ -109,7 +114,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}', name: 'user_deleteOne', methods: ['DELETE'], requirements: ['id' => '\d+'])]
-    public function deleteOneUser(int $id, ManagerRegistry $doctrine, UserPutRequest $request): JsonResponse
+    public function deleteOneUser(int $id, ManagerRegistry $doctrine, BaseRequest $request): JsonResponse
     {
         $entityManager = $doctrine->getManager();
         $userRep = $entityManager->getRepository(User::class);
@@ -123,8 +128,39 @@ class UserController extends AbstractController
         /** @var User */
         $user = $userRep
             ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
 
         $userRep->remove($user, true);
+
+        return new JsonResponse(null, Response::HTTP_OK);
+    }
+
+    #[Route('/users/{id}/role', name: 'user_changeRole', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    public function changeUsersRole(int $id, ManagerRegistry $doctrine, ChangeRoleRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('changeAllUsersRoles')
+            ->check($userRep);
+        if ($error) return $error;
+
+        $error = $request->validate($doctrine);
+        if ($error) return $error;
+
+        $role = $entityManager->getRepository(Role::class)->findOneBy(['name' => $this->role]);
+        if (is_null($role)) {
+            return new JsonResponse(['errorCode' => 102, 'invalidProperties' => ['role' => ['msg' => 'Role cant be found.', 'errorCode' => null]]], Response::HTTP_BAD_REQUEST);
+        }
+
+        /** @var User */
+        $user = $userRep
+            ->findOneBy(['id' => $id]);
+        if (is_null($user)) return new JsonResponse(['msg' => 'User not found', 'errorCode' => 201], Response::HTTP_BAD_REQUEST);
+
+        $user->setRole($role);
+        $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_OK);
     }
