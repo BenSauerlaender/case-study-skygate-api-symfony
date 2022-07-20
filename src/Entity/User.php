@@ -48,7 +48,7 @@ class User
     #[ORM\OneToOne(inversedBy: 'user', cascade: ['persist', 'remove'])]
     private ?EmailChangeRequest $emailChangeRequest = null;
 
-    public static function create(?string $email, ?string $name, ?string $postcode, ?string $city, ?string $phone, ?string $password, ?Role $role, ?string $code): self
+    public static function create(?string $email, ?string $name, ?string $postcode, ?string $city, ?string $phone, ?string $hashed_password, ?Role $role, ?string $code, bool $verified = false): self
     {
         $user = new self();
         $user->setEmail($email);
@@ -56,9 +56,9 @@ class User
         $user->setPostcode($postcode);
         $user->setCity($city);
         $user->setPhone($phone);
-        $user->setHashedPass($password);
+        $user->setHashedPass($hashed_password);
         $user->setRole($role);
-        $user->setVerified(false);
+        $user->setVerified($verified);
         $user->setRefreshTokenCount(0);
         $user->setVerificationCode($code);
         return $user;

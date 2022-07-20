@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Role;
 use App\Entity\User;
 use App\Requests\BaseRequest;
 use App\Requests\ChangeRoleRequest;
@@ -149,7 +150,7 @@ class UserController extends AbstractController
         $error = $request->validate($doctrine);
         if ($error) return $error;
 
-        $role = $entityManager->getRepository(Role::class)->findOneBy(['name' => $this->role]);
+        $role = $entityManager->getRepository(Role::class)->findOneBy(['name' => $request->role]);
         if (is_null($role)) {
             return new JsonResponse(['errorCode' => 102, 'invalidProperties' => ['role' => ['msg' => 'Role cant be found.', 'errorCode' => null]]], Response::HTTP_BAD_REQUEST);
         }
