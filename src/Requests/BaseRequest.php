@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BaseRequest
 {
     protected ConstraintViolationListInterface $errors;
-    protected Request $request;
+    public Request $request;
 
     public function __construct(protected ValidatorInterface $validator)
     {

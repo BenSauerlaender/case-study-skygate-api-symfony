@@ -19,6 +19,7 @@ use App\Service\PasswordHasher;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Mailer\MailerInterface;
@@ -311,5 +312,43 @@ class UserController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_CREATED);
+    }
+
+    #[Route('/users', name: 'user_getAll', methods: ['GET'])]
+    public function getAllUsers(ManagerRegistry $doctrine,  BaseRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('getAllUsers')
+            ->check($userRep);
+        if ($error) return $error;
+
+
+        $users = $userRep->findByQuery(Request::createFromGlobals()->query);
+        $result = [];
+        foreach ($users as $user) {
+            $result[] =  $user->getPublicArray();
+        }
+
+        return new JsonResponse($result, Response::HTTP_OK);
+    }
+
+    #[Route('/users/length', name: 'user_getAllLength', methods: ['GET'])]
+    public function getAllUsersLength(ManagerRegistry $doctrine,  BaseRequest $request): JsonResponse
+    {
+        $entityManager = $doctrine->getManager();
+        $userRep = $entityManager->getRepository(User::class);
+
+        $error = $request->requireAuth()
+            ->accept('getAllUsers')
+            ->check($userRep);
+        if ($error) return $error;
+
+
+        $result = $userRep->findLengthByQuery(Request::createFromGlobals()->query);
+
+        return new JsonResponse(['length' => $result], Response::HTTP_OK);
     }
 }
